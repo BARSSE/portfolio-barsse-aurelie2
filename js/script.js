@@ -35,22 +35,38 @@ function typewriterEffect() {
 typewriterEffect();
 
 // ---------- remplissage animé des niveaux de compétences ----------
+// Se déclenche au chargement si la barre est déjà visible à l'écran,
+// et sinon dès qu'elle entre dans le champ de vision au scroll.
 function animateSkillLevels() {
   const bars = document.querySelectorAll('.skill .lvl i[data-level]');
   if (bars.length === 0) return;
 
-  bars.forEach((bar, index) => {
-    const level = bar.getAttribute('data-level');
-    // petit décalage entre chaque barre pour un effet de chargement séquentiel
-    setTimeout(() => {
-      bar.style.width = level + '%';
-    }, index * 60);
-  });
+  if (!('IntersectionObserver' in window)) {
+    // Navigateur trop ancien : on remplit directement, sans animation au scroll.
+    bars.forEach(bar => { bar.style.width = bar.getAttribute('data-level') + '%'; });
+    return;
+  }
+
+  const barList = Array.from(bars);
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const bar = entry.target;
+      const level = bar.getAttribute('data-level');
+      const index = barList.indexOf(bar);
+      // petit décalage entre chaque barre pour un effet de chargement séquentiel
+      setTimeout(() => {
+        bar.style.width = level + '%';
+      }, (index % 8) * 60);
+      obs.unobserve(bar); // ne se déclenche qu'une fois par barre
+    });
+  }, { threshold: 0.3, rootMargin: '0px 0px -40px 0px' });
+
+  barList.forEach(bar => observer.observe(bar));
 }
 
-// requestAnimationFrame pour laisser le navigateur peindre la largeur à 0
-// avant de déclencher la transition vers la largeur finale.
-requestAnimationFrame(() => requestAnimationFrame(animateSkillLevels));
+animateSkillLevels();
 
 // ---------- menu déroulant ----------
   const menuBtn = document.getElementById('menuBtn');
@@ -77,23 +93,25 @@ requestAnimationFrame(() => requestAnimationFrame(animateSkillLevels));
 
   // ---------- formulaire de contact ----------
   // Adresse de destination : remplace-la par ta vraie adresse email.
-  const CONTACT_EMAIL = "barsse.aurelie@gmail.com";
+  const CONTACT_EMAIL = "ton-adresse@exemple.com";
 
   const form = document.getElementById('contactForm');
   const status = document.getElementById('formStatus');
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const nom = document.getElementById('nom').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const message = document.getElementById('message').value.trim();
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nom = document.getElementById('nom').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const message = document.getElementById('message').value.trim();
 
-    const subject = encodeURIComponent(`Contact portfolio — ${nom}`);
-    const body = encodeURIComponent(`Nom : ${nom}\nEmail : ${email}\n\n${message}`);
+      const subject = encodeURIComponent(`Contact portfolio — ${nom}`);
+      const body = encodeURIComponent(`Nom : ${nom}\nEmail : ${email}\n\n${message}`);
 
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
-    status.textContent = "> ouverture de ton client mail...";
-  });
+      window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+      status.textContent = "> ouverture de ton client mail...";
+    });
+  }
 
   // ---------- flux RSS — veille PQC ----------
   // Sources de veille : ANSSI (CERT-FR), Cloudflare, NIST, IBM.
@@ -119,7 +137,7 @@ requestAnimationFrame(() => requestAnimationFrame(animateSkillLevels));
 
   async function loadRSS() {
     const container = document.getElementById('rssContainer');
-    if (RSS_FEEDS.length === 0) return;
+    if (!container || RSS_FEEDS.length === 0) return;
 
     container.innerHTML = '<div class="rss-loading">$ chargement des flux...</div>';
     let allItems = [];
