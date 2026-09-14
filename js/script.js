@@ -1,8 +1,5 @@
-// ---------- effet machine à écrire (nom sur l'accueil, "404" sur la page d'erreur) ----------
-function typewriterEffect() {
-  const el = document.getElementById('typeName');
-  if (!el) return;
-
+// ---------- effet machine à écrire (déclenché à l'apparition à l'écran) ----------
+function runTypewriter(el) {
   const cursor = el.querySelector('.cursor');
   const fullText = el.getAttribute('data-type-text') || '';
   const speed = 90; // ms entre chaque caractère
@@ -15,13 +12,13 @@ function typewriterEffect() {
   });
 
   if (reduceMotion) {
-    el.insertBefore(document.createTextNode(fullText), cursor);
+    el.insertBefore(document.createTextNode(fullText), cursor || null);
     return;
   }
 
   let i = 0;
   const textNode = document.createTextNode('');
-  el.insertBefore(textNode, cursor);
+  el.insertBefore(textNode, cursor || null);
 
   (function typeChar() {
     if (i <= fullText.length) {
@@ -32,7 +29,28 @@ function typewriterEffect() {
   })();
 }
 
-typewriterEffect();
+function initTypewriters() {
+  const elements = document.querySelectorAll('.typewriter[data-type-text]');
+  if (elements.length === 0) return;
+
+  if (!('IntersectionObserver' in window)) {
+    // Navigateur trop ancien : on affiche directement, sans animation au scroll.
+    elements.forEach(runTypewriter);
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      runTypewriter(entry.target);
+      obs.unobserve(entry.target); // ne se déclenche qu'une fois par élément
+    });
+  }, { threshold: 0.4 });
+
+  elements.forEach(el => observer.observe(el));
+}
+
+initTypewriters();
 
 // ---------- remplissage animé des niveaux de compétences ----------
 // Se déclenche au chargement si la barre est déjà visible à l'écran,
