@@ -1,3 +1,57 @@
+// ---------- effet machine à écrire (nom sur l'accueil, "404" sur la page d'erreur) ----------
+function typewriterEffect() {
+  const el = document.getElementById('typeName');
+  if (!el) return;
+
+  const cursor = el.querySelector('.cursor');
+  const fullText = el.getAttribute('data-type-text') || '';
+  const speed = 90; // ms entre chaque caractère
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Retire le texte statique déjà présent dans le HTML (garde le curseur)
+  Array.from(el.childNodes).forEach(node => {
+    if (node.nodeType === Node.TEXT_NODE) el.removeChild(node);
+  });
+
+  if (reduceMotion) {
+    el.insertBefore(document.createTextNode(fullText), cursor);
+    return;
+  }
+
+  let i = 0;
+  const textNode = document.createTextNode('');
+  el.insertBefore(textNode, cursor);
+
+  (function typeChar() {
+    if (i <= fullText.length) {
+      textNode.textContent = fullText.slice(0, i);
+      i++;
+      setTimeout(typeChar, speed);
+    }
+  })();
+}
+
+typewriterEffect();
+
+// ---------- remplissage animé des niveaux de compétences ----------
+function animateSkillLevels() {
+  const bars = document.querySelectorAll('.skill .lvl i[data-level]');
+  if (bars.length === 0) return;
+
+  bars.forEach((bar, index) => {
+    const level = bar.getAttribute('data-level');
+    // petit décalage entre chaque barre pour un effet de chargement séquentiel
+    setTimeout(() => {
+      bar.style.width = level + '%';
+    }, index * 60);
+  });
+}
+
+// requestAnimationFrame pour laisser le navigateur peindre la largeur à 0
+// avant de déclencher la transition vers la largeur finale.
+requestAnimationFrame(() => requestAnimationFrame(animateSkillLevels));
+
 // ---------- menu déroulant ----------
   const menuBtn = document.getElementById('menuBtn');
   const dropdown = document.getElementById('dropdownMenu');
