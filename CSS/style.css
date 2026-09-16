@@ -338,7 +338,7 @@
   .centred-underlined-text {
     text-align: center;
     text-decoration: underline;
-    color: #120B22; 
+    color: #D9C9E6; 
       }
   .timeline-exp{border-left:2px solid var(--violet-dark); padding-left:20px; margin-left:6px;}
   .timeline-exp .dot{
