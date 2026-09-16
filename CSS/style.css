@@ -68,6 +68,14 @@
   }
   .menu-btn:hover, .menu-btn:focus-visible{background:var(--violet); color:#fff;}
   .menu-btn::before{content:"> "; color:var(--cyan);}
+  .menu-btn .chevron{
+    display:inline-block;
+    margin-left:6px;
+    transition:transform .25s ease;
+  }
+  .menu-btn[aria-expanded="true"] .chevron{
+    transform:rotate(180deg);
+  }
 
   .dropdown{
     position:absolute; top:calc(100% + 6px); right:0;
@@ -75,11 +83,41 @@
     border:1px solid var(--violet-dark);
     min-width:260px;
     box-shadow:0 10px 30px rgba(0,0,0,0.5);
-    display:none;
+    display:flex;
     flex-direction:column;
     padding:6px 0;
+    overflow:hidden;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform:translateY(-8px);
+    transition:opacity .25s ease, transform .25s ease, visibility .25s;
   }
-  .dropdown.open{display:flex;}
+  .dropdown.open{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    transform:translateY(0);
+  }
+  /* ligne de scan qui balaie le menu à l'ouverture */
+  .dropdown::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; top:0;
+    height:2px;
+    background:var(--cyan);
+    box-shadow:0 0 8px var(--cyan), 0 0 16px var(--cyan);
+    opacity:0;
+    pointer-events:none;
+  }
+  .dropdown.open::after{
+    animation:scanLine .5s ease-out;
+  }
+  @keyframes scanLine{
+    0%{ top:0; opacity:1; }
+    85%{ opacity:1; }
+    100%{ top:100%; opacity:0; }
+  }
   .dropdown a{
     padding:9px 16px;
     font-size:13.5px;
@@ -94,6 +132,39 @@
   }
   .dropdown a .idx{color:var(--text-dim); font-size:12px;}
   .dropdown a:hover .idx{color:var(--violet);}
+
+  /* effet "sortie de commande" : le > clignote puis le texte apparaît */
+  .dropdown a .link-prompt{
+    color:var(--cyan);
+    opacity:0;
+  }
+  .dropdown a .idx,
+  .dropdown a .link-label{
+    opacity:0;
+    transform:translateX(-4px);
+    transition:opacity .25s ease, transform .25s ease;
+    transition-delay:calc(var(--i, 0) * 45ms + 150ms);
+  }
+  @keyframes promptBlink{
+    0%{ opacity:0; }
+    30%{ opacity:1; }
+    55%{ opacity:0; }
+    80%{ opacity:1; }
+    100%{ opacity:1; }
+  }
+  .dropdown.open a .link-prompt{
+    animation:promptBlink .4s steps(1) forwards;
+    animation-delay:calc(var(--i, 0) * 45ms);
+  }
+  .dropdown.open a .idx,
+  .dropdown.open a .link-label{
+    opacity:1;
+    transform:translateX(0);
+  }
+  @media (prefers-reduced-motion: reduce){
+    .dropdown, .dropdown a .idx, .dropdown a .link-label{ transition:none; }
+    .dropdown.open::after, .dropdown.open a .link-prompt{ animation:none; opacity:1; }
+  }
 
   /* ---------- hero ---------- */
   .hero{
