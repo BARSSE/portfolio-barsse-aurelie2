@@ -86,9 +86,9 @@ function animateSkillLevels() {
 
 animateSkillLevels();
 
-// ---------- révélation en cascade au scroll (cartes projets, blocs SISR) ----------
-// Chaque conteneur (une grille de cartes, ou la liste des blocs SISR) est observé :
-// dès qu'il apparaît à l'écran, ses éléments enfants se révèlent un par un.
+// ---------- révélation répétée au scroll (cartes projets, blocs SISR) ----------
+// À chaque nouvelle entrée dans le champ de vision, l'animation est rejouée.
+// On retire la classe à la sortie pour que l'élément puisse repartir de zéro.
 function initCascadeReveal(containerSelector, itemSelector, staggerMs) {
   const containers = document.querySelectorAll(containerSelector);
   if (containers.length === 0) return;
@@ -98,14 +98,20 @@ function initCascadeReveal(containerSelector, itemSelector, staggerMs) {
     return;
   }
 
-  const observer = new IntersectionObserver((entries, obs) => {
+  const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
       const items = entry.target.querySelectorAll(itemSelector);
+
+      if (!entry.isIntersecting) {
+        items.forEach(item => item.classList.remove('is-visible'));
+        return;
+      }
+
+      // Repart de l'état initial à chaque entrée dans l'écran.
       items.forEach((item, i) => {
+        item.classList.remove('is-visible');
         setTimeout(() => item.classList.add('is-visible'), i * staggerMs);
       });
-      obs.unobserve(entry.target);
     });
   }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
 
@@ -303,7 +309,7 @@ initDecryptTitles();
     const toShow = finalItems.slice(0, 10);
 
     container.innerHTML = toShow.map((item, i) => `
-      <div class="rss-item" style="animation-delay:${i * 120}ms">
+      <div class="rss-item" style="--rss-delay:${i * 120}ms">
         <div class="rss-date">${item.date ? new Date(item.date).toLocaleDateString('fr-FR') : ''}</div>
         <div class="rss-title"><a href="${item.link}" target="_blank" rel="noopener">${item.title}</a></div>
         <div class="rss-source">${item.source}</div>
@@ -311,4 +317,31 @@ initDecryptTitles();
     `).join('');
   }
 
+  // Rejoue l'animation des articles RSS à chaque nouvelle apparition du bloc.
+  function initRSSReveal() {
+    const container = document.getElementById('rssContainer');
+    if (!container || !('IntersectionObserver' in window)) return;
+
+    let wasVisible = false;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !wasVisible) {
+          const items = container.querySelectorAll('.rss-item');
+          items.forEach(item => {
+            item.classList.remove('rss-animate');
+            // Force le navigateur à recalculer le style afin de pouvoir rejouer l'animation.
+            void item.offsetWidth;
+            item.classList.add('rss-animate');
+          });
+          wasVisible = true;
+        } else if (!entry.isIntersecting) {
+          wasVisible = false;
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
+    observer.observe(container);
+  }
+
+  initRSSReveal();
   loadRSS();
