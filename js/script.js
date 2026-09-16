@@ -115,6 +115,73 @@ function initCascadeReveal(containerSelector, itemSelector, staggerMs) {
 initCascadeReveal('.cards', '.card', 90);       // cascade projets 1A / 2A
 initCascadeReveal('.sisr-list', '.sisr-item', 90); // apparition façon "ls -la" des blocs SISR
 
+// ---------- effet de déchiffrement des titres de section ----------
+// Le texte apparaît d'abord sous forme de caractères aléatoires, puis se
+// "déchiffre" caractère par caractère de gauche à droite jusqu'au vrai mot.
+const DECRYPT_CHARS = "!<>-_\\/[]{}=+*^?#01ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+function runDecryptEffect(el) {
+  const finalText = el.getAttribute('data-decrypt-text') || el.textContent;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (reduceMotion) {
+    el.textContent = finalText;
+    return;
+  }
+
+  const length = finalText.length;
+  const framesPerChar = 3;   // vitesse de déchiffrement (plus petit = plus rapide)
+  const lockDelay = 8;       // nombre de frames de "brouillage" avant de figer un caractère
+  const totalFrames = length * framesPerChar + lockDelay;
+  let frame = 0;
+
+  function tick() {
+    let output = "";
+    for (let i = 0; i < length; i++) {
+      const lockFrame = i * framesPerChar + lockDelay;
+      if (finalText[i] === " ") {
+        output += " ";
+      } else if (frame >= lockFrame) {
+        output += finalText[i];
+      } else {
+        output += DECRYPT_CHARS[Math.floor(Math.random() * DECRYPT_CHARS.length)];
+      }
+    }
+    el.textContent = output;
+    frame++;
+
+    if (frame <= totalFrames) {
+      setTimeout(tick, 28);
+    } else {
+      el.textContent = finalText; // garantit le texte exact à la fin
+    }
+  }
+
+  tick();
+}
+
+function initDecryptTitles() {
+  const elements = document.querySelectorAll('.decrypt-text[data-decrypt-text]');
+  if (elements.length === 0) return;
+
+  if (!('IntersectionObserver' in window)) {
+    elements.forEach(runDecryptEffect);
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      runDecryptEffect(entry.target);
+      obs.unobserve(entry.target); // ne se déchiffre qu'une fois
+    });
+  }, { threshold: 0.4 });
+
+  elements.forEach(el => observer.observe(el));
+}
+
+initDecryptTitles();
+
 // ---------- menu déroulant ----------
   const menuBtn = document.getElementById('menuBtn');
   const dropdown = document.getElementById('dropdownMenu');
