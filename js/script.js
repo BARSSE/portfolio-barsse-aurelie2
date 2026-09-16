@@ -189,6 +189,16 @@ initDecryptTitles();
   menuBtn.addEventListener('click', () => {
     const isOpen = dropdown.classList.toggle('open');
     menuBtn.setAttribute('aria-expanded', isOpen);
+
+    // À chaque ouverture du menu, relance le déchiffrement uniquement sur
+    // les titres de section actuellement visibles dans la fenêtre.
+    if (isOpen) {
+      document.querySelectorAll('.decrypt-text[data-decrypt-text]').forEach(el => {
+        const rect = el.getBoundingClientRect();
+        const isVisible = rect.bottom > 0 && rect.top < window.innerHeight;
+        if (isVisible) runDecryptEffect(el);
+      });
+    }
   });
 
   document.addEventListener('click', (e) => {
