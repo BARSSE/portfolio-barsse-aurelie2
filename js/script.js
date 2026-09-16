@@ -86,6 +86,35 @@ function animateSkillLevels() {
 
 animateSkillLevels();
 
+// ---------- révélation en cascade au scroll (cartes projets, blocs SISR) ----------
+// Chaque conteneur (une grille de cartes, ou la liste des blocs SISR) est observé :
+// dès qu'il apparaît à l'écran, ses éléments enfants se révèlent un par un.
+function initCascadeReveal(containerSelector, itemSelector, staggerMs) {
+  const containers = document.querySelectorAll(containerSelector);
+  if (containers.length === 0) return;
+
+  if (!('IntersectionObserver' in window)) {
+    document.querySelectorAll(itemSelector).forEach(el => el.classList.add('is-visible'));
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const items = entry.target.querySelectorAll(itemSelector);
+      items.forEach((item, i) => {
+        setTimeout(() => item.classList.add('is-visible'), i * staggerMs);
+      });
+      obs.unobserve(entry.target);
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
+  containers.forEach(c => observer.observe(c));
+}
+
+initCascadeReveal('.cards', '.card', 90);       // cascade projets 1A / 2A
+initCascadeReveal('.sisr-list', '.sisr-item', 90); // apparition façon "ls -la" des blocs SISR
+
 // ---------- menu déroulant ----------
   const menuBtn = document.getElementById('menuBtn');
   const dropdown = document.getElementById('dropdownMenu');
@@ -196,8 +225,8 @@ animateSkillLevels();
     finalItems.sort((a, b) => new Date(b.date) - new Date(a.date));
     const toShow = finalItems.slice(0, 10);
 
-    container.innerHTML = toShow.map(item => `
-      <div class="rss-item">
+    container.innerHTML = toShow.map((item, i) => `
+      <div class="rss-item" style="animation-delay:${i * 120}ms">
         <div class="rss-date">${item.date ? new Date(item.date).toLocaleDateString('fr-FR') : ''}</div>
         <div class="rss-title"><a href="${item.link}" target="_blank" rel="noopener">${item.title}</a></div>
         <div class="rss-source">${item.source}</div>
