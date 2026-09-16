@@ -335,7 +335,7 @@
     word-break:break-word;
   }
   .sisr-item .desc{color:var(--text-dim); font-size:13.5px;}
-.centred-underlined-text {
+  .centred-underlined-text {
     text-align: center;
     text-decoration: underline;
       }
